@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Field to Front Office</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800;900&family=Public+Sans:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+body{margin:0}
+/* Layout: stadium scoreboard header → quiz card on a yard-line track → pipeline chart → context cards → sources */
+:root{
+  --bg:#EEF1EA; --surface:#FFFFFF; --surface-2:#E3E8DF; --ink:#15231A; --muted:#55665A; --line:#C9D2C5;
+  --turf:#2C6A43; --turf-ink:#FFFFFF; --flag:#D9A915; --flag-soft:#F6E7B4; --good:#2C6A43; --warn:#B7791F; --bad:#B4432F;
+  --display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
+  --body:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1611; --surface:#16221A; --surface-2:#1E2C22; --ink:#E6EDE7; --muted:#9BAC9F; --line:#2D3E32;
+  --turf:#5DAE7A; --turf-ink:#0E1611; --flag:#EFC542; --flag-soft:#3A3217; --good:#6CC08A; --warn:#E3A84A; --bad:#E07A66; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1611; --surface:#16221A; --surface-2:#1E2C22; --ink:#E6EDE7; --muted:#9BAC9F; --line:#2D3E32;
+  --turf:#5DAE7A; --turf-ink:#0E1611; --flag:#EFC542; --flag-soft:#3A3217; --good:#6CC08A; --warn:#E3A84A; --bad:#E07A66; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55}
+.wrap{max-width:960px;margin:0 auto;padding-inline:20px;padding-block:28px 56px;display:grid;gap:40px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.02;letter-spacing:.01em}
+p{margin:0}
+a{color:var(--turf)}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+:focus-visible{outline:3px solid var(--flag);outline-offset:2px}
+
+/* Hero */
+.hero{display:grid;gap:18px;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);align-items:end}
+.hero h1{font-size:clamp(46px,9vw,92px);font-weight:900;text-transform:uppercase}
+.hero h1 span{color:var(--turf)}
+.hero .lede{max-width:56ch;color:var(--muted);font-size:17px;margin-top:12px}
+.board{background:var(--ink);color:var(--bg);border-radius:6px;padding:14px 16px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.board div{display:grid;gap:2px;text-align:center}
+.board b{font-family:var(--mono);font-size:30px;color:var(--flag);font-variant-numeric:tabular-nums;line-height:1}
+.board small{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;opacity:.75}
+@media (max-width:720px){.hero{grid-template-columns:1fr}}
+
+/* Quiz */
+.quiz{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:clamp(18px,4vw,32px);display:grid;gap:22px}
+.qhead{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:center}
+.tag{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;background:var(--surface-2);padding:4px 8px;border-radius:3px;color:var(--muted)}
+.question{font-family:var(--display);font-weight:800;font-size:clamp(28px,4.6vw,42px);text-transform:none;max-width:24ch}
+.guessval{font-family:var(--mono);font-weight:700;font-size:clamp(40px,8vw,64px);font-variant-numeric:tabular-nums;line-height:1}
+.guessval small{font-size:.4em;color:var(--muted);margin-left:6px;font-weight:500}
+
+.field{position:relative;padding-block:6px 22px}
+.track{position:relative;height:54px;border-radius:4px;background:var(--turf);overflow:hidden}
+.track .yl{position:absolute;top:0;bottom:0;width:2px;background:color-mix(in srgb,var(--turf-ink) 55%,transparent)}
+.track .hash{position:absolute;top:6px;width:1px;height:8px;background:color-mix(in srgb,var(--turf-ink) 45%,transparent)}
+.track .hash.b{top:auto;bottom:6px}
+.marker{position:absolute;top:-4px;bottom:-4px;width:4px;margin-left:-2px;border-radius:2px;transition:left .35s ease}
+.marker.you{background:var(--flag);box-shadow:0 0 0 2px var(--ink)}
+.marker.real{background:var(--turf-ink);box-shadow:0 0 0 2px var(--ink)}
+.marker .lbl{position:absolute;top:-22px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:11px;white-space:nowrap;color:var(--ink);background:var(--surface);padding:0 4px;border-radius:2px}
+.ticks{position:relative;height:16px;margin-top:6px;font-family:var(--mono);font-size:11px;color:var(--muted)}
+.ticks span{position:absolute;transform:translateX(-50%)}
+input[type=range]{position:absolute;inset:6px 0 auto 0;width:100%;height:54px;margin:0;opacity:0;cursor:pointer}
+input[type=range]:disabled{cursor:default}
+.field:has(input:focus-visible) .track{outline:3px solid var(--flag);outline-offset:3px}
+
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+button{font:600 15px/1 var(--body);border-radius:4px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);padding:12px 16px;cursor:pointer}
+button.primary{background:var(--turf);color:var(--turf-ink);border-color:var(--turf)}
+button:disabled{opacity:.45;cursor:default}
+button:not(:disabled):hover{filter:brightness(1.07)}
+.kbd{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.hint{background:var(--flag-soft);border-left:4px solid var(--flag);padding:10px 14px;font-size:15px}
+
+.reveal{border-top:1px dashed var(--line);padding-top:20px;display:grid;gap:12px}
+.verdict{display:flex;flex-wrap:wrap;gap:12px;align-items:baseline}
+.verdict .pts{font-family:var(--mono);font-weight:700;font-size:22px}
+.pill{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:4px 8px;border-radius:999px;color:var(--bg)}
+.pill.good{background:var(--good)} .pill.warn{background:var(--warn)} .pill.bad{background:var(--bad)}
+.reveal p{max-width:68ch}
+.src{font-size:13px;color:var(--muted)}
+
+.final{display:grid;gap:14px}
+.final h2{font-size:clamp(34px,6vw,54px);text-transform:uppercase}
+
+/* Pipeline */
+section > h2{font-size:clamp(30px,5vw,44px);text-transform:uppercase}
+.sechead{display:grid;gap:8px;margin-bottom:18px}
+.sechead p{color:var(--muted);max-width:64ch}
+.pipe{display:grid;gap:12px}
+.row{display:grid;grid-template-columns:minmax(120px,190px) minmax(0,1fr) 64px;gap:12px;align-items:center}
+.row .name{font-weight:600;font-size:15px}
+.row .name small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+.bar{height:26px;background:var(--surface-2);border-radius:3px;position:relative;overflow:hidden}
+.bar i{position:absolute;inset:0 auto 0 0;background:var(--turf);border-radius:3px}
+.bar.later i{background:var(--flag)}
+.row .v{font-family:var(--mono);font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+.axis{display:grid;grid-template-columns:minmax(120px,190px) minmax(0,1fr) 64px;gap:12px}
+.axis div{position:relative;height:16px;font-family:var(--mono);font-size:11px;color:var(--muted)}
+.axis span{position:absolute;transform:translateX(-50%)}
+.axis span:first-child{transform:none} .axis span:last-child{transform:translateX(-100%)}
+.legend{display:flex;flex-wrap:wrap;gap:16px;font-size:13px;color:var(--muted);margin-top:6px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+@media (max-width:560px){.row,.axis{grid-template-columns:minmax(0,1fr) 56px}.row .name{grid-column:1/-1}.axis div:first-child{display:none}.row .bar{grid-column:1}.axis div:last-child{display:none}}
+
+/* Context */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:18px;display:grid;gap:8px;align-content:start}
+.card .yr{font-family:var(--mono);font-weight:700;color:var(--turf);font-size:20px}
+.card h3{font-size:24px;font-weight:800}
+.card p{font-size:15px;color:var(--ink)}
+.note{background:var(--surface-2);border-radius:6px;padding:16px 18px;font-size:15px;max-width:76ch}
+.sources ol{margin:0;padding-left:20px;display:grid;gap:6px;font-size:14px;color:var(--muted)}
+
+/* History */
+details.hist{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px 16px}
+details.hist summary{cursor:pointer;font-weight:600}
+.histlist{display:grid;gap:8px;margin-top:12px;font-size:14px}
+.histlist div{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:12px;align-items:center;border-top:1px solid var(--line);padding-top:8px}
+.histlist .m{font-family:var(--mono);font-variant-numeric:tabular-nums;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="hero">
+    <div>
+      <div class="eyebrow">An NFL representation quiz</div>
+      <h1>Field to <span>Front Office</span></h1>
+      <p class="lede">Most NFL players are Black. Very few of the people who own the teams, run them or coach them are. Guess the numbers on the field below, then see how far the share drops at each level of the league.</p>
+    </div>
+    <div class="board" aria-live="polite">
+      <div><b id="sScore">0</b><small>Points</small></div>
+      <div><b id="sStreak">0</b><small>Streak</small></div>
+      <div><b id="sRound">1/12</b><small>Question</small></div>
+    </div>
+  </header>
+
+  <main class="quiz" id="quiz">
+    <div class="qhead">
+      <span class="tag" id="qTag">Players</span>
+      <span class="kbd">Arrow keys move the marker · Enter locks in · N for next</span>
+    </div>
+    <div style="display:grid;gap:10px">
+      <div class="question" id="qText"></div>
+      <div class="guessval" id="guessVal"></div>
+    </div>
+    <div class="field">
+      <div class="track" id="track"></div>
+      <div class="ticks" id="ticks"></div>
+      <input type="range" id="slider" aria-label="Your guess">
+    </div>
+    <div class="hint" id="hintBox" hidden></div>
+    <div class="controls">
+      <button class="primary" id="lockBtn">Lock in guess</button>
+      <button id="hintBtn">Show a hint (−10 pts)</button>
+      <button id="nextBtn" hidden>Next question →</button>
+    </div>
+    <div class="reveal" id="reveal" hidden>
+      <div class="verdict"><span class="pill" id="vPill"></span><span class="pts" id="vPts"></span><span id="vLine"></span></div>
+      <p id="vWhy"></p>
+      <p class="src" id="vSrc"></p>
+    </div>
+    <div class="final" id="final" hidden>
+      <div class="eyebrow">Final whistle</div>
+      <h2 id="fScore"></h2>
+      <p id="fLine"></p>
+      <div class="controls"><button class="primary" id="againBtn">Play again</button></div>
+    </div>
+  </main>
+
+  <details class="hist" id="hist">
+    <summary>Your answers so far (<span id="hCount">0</span>)</summary>
+    <div class="histlist" id="hList"></div>
+  </details>
+
+  <section>
+    <div class="sechead">
+      <div class="eyebrow">The pipeline</div>
+      <h2>Share who are Black, by level</h2>
+      <p>Each bar is the share of people at that level who are Black, from the most recent TIDES NFL report card (2023 season). Yellow bars show the start of the 2026 season.</p>
+    </div>
+    <div class="pipe" id="pipe"></div>
+    <div class="axis" aria-hidden="true"><div></div><div><span style="left:0">0%</span><span style="left:25%">25%</span><span style="left:50%">50%</span><span style="left:75%">75%</span><span style="left:100%">100%</span></div><div></div></div>
+    <div class="legend"><span><i style="background:var(--turf)"></i>2023 season (TIDES)</span><span><i style="background:var(--flag)"></i>2026 season start (news reports)</span></div>
+  </section>
+
+  <section>
+    <div class="sechead">
+      <div class="eyebrow">Context</div>
+      <h2>How the league got here</h2>
+    </div>
+    <div class="cards">
+      <article class="card"><div class="yr">1921</div><h3>Fritz Pollard</h3><p>Pollard co-coached the Akron Pros and became the first Black head coach in the league's history. Another Black head coach would not follow for nearly 70 years.</p></article>
+      <article class="card"><div class="yr">1934–1945</div><h3>The unwritten ban</h3><p>No Black players appeared in the NFL for 12 seasons under an informal agreement among owners. Kenny Washington and Woody Strode broke it with the Los Angeles Rams in 1946.</p></article>
+      <article class="card"><div class="yr">1989</div><h3>Art Shell</h3><p>The Raiders hired Shell, the first Black head coach of the modern era. Doug Williams had become the first Black quarterback to start and win a Super Bowl the year before.</p></article>
+      <article class="card"><div class="yr">2003</div><h3>The Rooney Rule</h3><p>Teams must interview candidates of color for head coach jobs, and later for GM, coordinator and senior front-office roles. It requires interviews, not hires.</p></article>
+      <article class="card"><div class="yr">2026</div><h3>Ten openings, no Black hires</h3><p>The 2026 hiring cycle had 10 head coach vacancies. None went to a Black coach, the fifth cycle since 2003 with no Black head coach hired. Robert Saleh was the one coach of color hired.</p></article>
+      <article class="card"><div class="yr">Today</div><h3>Ownership</h3><p>No NFL team has ever had a Black majority owner. Shad Khan of the Jacksonville Jaguars is the league's only majority owner of color.</p></article>
+    </div>
+  </section>
+
+  <div class="note"><strong>About the numbers.</strong> TIDES counts players who identify as more than one race (10.9% in 2023) separately from Black players (53.5%). Press reports that count differently put the Black share of players anywhere from the high 50s to about 70%. Either way, the share falls sharply at every step from the field to the owner's box.</div>
+
+  <section class="sources">
+    <div class="sechead"><div class="eyebrow">Sources</div></div>
+    <ol>
+      <li><a href="https://www.tidesport.org/nfl" target="_blank" rel="noopener">The Institute for Diversity and Ethics in Sport (TIDES), 2023 NFL Racial &amp; Gender Report Card</a></li>
+      <li><a href="https://sports.yahoo.com/articles/nfl-set-enter-2026-season-225550029.html" target="_blank" rel="noopener">Yahoo Sports: NFL set to enter 2026 season with only three Black head coaches</a></li>
+      <li><a href="https://amsterdamnews.com/news/2026/02/05/and-then-there-were-three-the-concerning-decline-of-black-nfl-head-coaches/" target="_blank" rel="noopener">Amsterdam News: And then there were three (Feb 2026)</a></li>
+      <li><a href="https://andscape.com/features/there-are-only-3-black-nfl-head-coaches-does-that-matter-to-players/" target="_blank" rel="noopener">Andscape: There are only 3 Black NFL head coaches (Feb 2026)</a></li>
+      <li><a href="https://spokesman-recorder.com/2024/01/04/tides-report-card-shows-very-positive-progress-in-nfl-diversity/" target="_blank" rel="noopener">Minnesota Spokesman-Recorder: TIDES report card (Jan 2024)</a></li>
+    </ol>
+  </section>
+</div>
+
+<script>
+(function(){
+const TIDES='TIDES 2023 NFL Racial & Gender Report Card';
+const Q=[
+ {tag:'Players',q:'What share of NFL players are Black?',min:0,max:100,step:1,unit:'%',a:53.5,start:30,
+  hint:'More than half.',why:'53.5% of players were Black in 2023. Another 10.9% identified as two or more races, so many counts that include them land closer to 65–70%.',src:TIDES},
+ {tag:'Players',q:'What share of NFL players are people of color?',min:0,max:100,step:1,unit:'%',a:66.7,start:40,
+  hint:'About two in three.',why:'Two in three players were people of color in 2023. White players were 24.4%.',src:TIDES},
+ {tag:'Ownership',q:'How many of the 32 teams have a Black majority owner?',min:0,max:32,step:1,unit:' of 32',a:0,start:8,
+  hint:'Fewer than one.',why:'None, and no team ever has. The majority owners control the franchises, hire the GMs and sign off on coaching hires.',src:TIDES+'; Amsterdam News, Feb 2026'},
+ {tag:'Ownership',q:'How many of the 32 majority owners are people of color?',min:0,max:32,step:1,unit:' of 32',a:1,start:8,
+  hint:'You can count them on one finger.',why:'One: Shad Khan, who owns the Jacksonville Jaguars. That is 3.1% of owners in a league where two-thirds of players are people of color.',src:TIDES},
+ {tag:'Head coaches',q:'How many Black head coaches did the NFL have at the start of the 2026 season?',min:0,max:32,step:1,unit:' of 32',a:3,start:10,
+  hint:'Fewer than five.',why:'Three: Todd Bowles (Buccaneers), Aaron Glenn (Jets) and DeMeco Ryans (Texans). That is 9.4% of head coaches.',src:'Yahoo Sports; Andscape, Feb 2026'},
+ {tag:'Head coaches',q:'The 2026 hiring cycle had 10 head coach openings. How many went to Black coaches?',min:0,max:10,step:1,unit:' of 10',a:0,start:3,
+  hint:'Think low.',why:'None. It was the fifth hiring cycle since the Rooney Rule began in 2003 with no Black head coach hired.',src:'Yahoo Sports; Amsterdam News, Feb 2026'},
+ {tag:'Head coaches',q:'How many Black head coaches did the league start the 2025 season with?',min:0,max:32,step:1,unit:' of 32',a:6,start:10,
+  hint:'Twice as many as 2026.',why:'Six. Half of them were gone a season later.',src:'Amsterdam News, Feb 2026'},
+ {tag:'Head coaches',q:'What is the most Black head coaches the NFL has ever had in one season?',min:0,max:32,step:1,unit:' of 32',a:7,start:12,
+  hint:'Single digits.',why:'Seven, reached in 2006, 2011, 2017 and 2018. The league has never had more than about a fifth of its head coaches be Black.',src:TIDES+'; Spokesman-Recorder, Jan 2024'},
+ {tag:'Assistant coaches',q:'What share of NFL assistant coaches are Black?',min:0,max:100,step:1,unit:'%',a:36.6,start:20,
+  hint:'Between a third and two-fifths.',why:'36.6% in 2023, an all-time high. The pipeline is there at the assistant level. It narrows at the coordinator and head coach jobs.',src:TIDES},
+ {tag:'Front office',q:'How many of the 32 general managers were people of color in 2023?',min:0,max:32,step:1,unit:' of 32',a:9,start:4,
+  hint:'More than a quarter.',why:'Nine (eight Black, one Latino). By early 2026, news reports counted four Black GMs: Andrew Berry, Brad Holmes, Ryan Poles and Ian Cunningham.',src:TIDES+'; Amsterdam News, Feb 2026'},
+ {tag:'Front office',q:'How many team presidents or CEOs were people of color in 2023?',min:0,max:32,step:1,unit:' of 32',a:6,start:12,
+  hint:'Fewer than ten.',why:'Six, or 18.8% of teams.',src:TIDES},
+ {tag:'League office',q:'What share of NFL league office staff are people of color?',min:0,max:100,step:1,unit:'%',a:34.9,start:60,
+  hint:'About a third.',why:'34.9% in 2023, roughly half the share among players.',src:TIDES}
+];
+const PIPE=[
+ {name:'Players',sub:'2023',v:53.5},
+ {name:'Assistant coaches',sub:'2023',v:36.6},
+ {name:'General managers',sub:'2023 · 8 of 32',v:25.0},
+ {name:'General managers',sub:'2026 · 4 of 32',v:12.5,later:true},
+ {name:'Head coaches',sub:'2023 · 3 of 32',v:9.4},
+ {name:'Head coaches',sub:'2026 · 3 of 32',v:9.4,later:true},
+ {name:'Majority owners',sub:'0 of 32',v:0}
+];
+const $=id=>document.getElementById(id);
+const pipe=$('pipe');
+PIPE.forEach(p=>{const r=document.createElement('div');r.className='row';
+ r.innerHTML=`<div class="name">${p.name}<small>${p.sub}</small></div><div class="bar${p.later?' later':''}"><i style="width:${p.v}%"></i></div><div class="v">${p.v.toFixed(1)}%</div>`;pipe.appendChild(r)});
+
+let order=[],i=0,score=0,streak=0,best=0,hintUsed=false,locked=false,hist=[];
+const slider=$('slider');
+function shuffle(a){for(let k=a.length-1;k>0;k--){const j=Math.floor(Math.random()*(k+1));[a[k],a[j]]=[a[j],a[k]]}return a}
+function fmt(v,q){const n=(q.max===100&&v%1)?v.toFixed(1):Math.round(v*10)/10;return n+(q.unit==='%'?'%':'')}
+function pos(v,q){return (v-q.min)/(q.max-q.min)*100}
+function drawTrack(q){
+ const t=$('track'),tk=$('ticks');t.innerHTML='';tk.innerHTML='';
+ const steps=q.max===100?10:(q.max===10?10:8);
+ for(let s=0;s<=steps;s++){const p=s/steps*100;
+  if(s>0&&s<steps){const l=document.createElement('div');l.className='yl';l.style.left=p+'%';t.appendChild(l)}
+  const lab=document.createElement('span');lab.style.left=p+'%';lab.textContent=Math.round(q.min+s/steps*(q.max-q.min))+(q.unit==='%'?'':'');
+  if(s===0)lab.style.transform='none'; if(s===steps)lab.style.transform='translateX(-100%)'; tk.appendChild(lab)}
+ for(let h=1;h<steps*5;h++){if(h%5===0)continue;const p=h/(steps*5)*100;
+  ['','b'].forEach(c=>{const d=document.createElement('div');d.className='hash '+c;d.style.left=p+'%';t.appendChild(d)})}
+ const you=document.createElement('div');you.className='marker you';you.id='mYou';you.innerHTML='<span class="lbl">You</span>';t.appendChild(you);
+}
+function showGuess(){const q=Q[order[i]];const v=+slider.value;
+ $('guessVal').innerHTML=(q.unit==='%'?v+'<small>%</small>':v+'<small>'+q.unit.trim()+'</small>');
+ $('mYou').style.left=pos(v,q)+'%'}
+function load(){
+ const q=Q[order[i]];locked=false;hintUsed=false;
+ $('qTag').textContent=q.tag;$('qText').textContent=q.q;
+ slider.min=q.min;slider.max=q.max;slider.step=q.step;slider.value=q.start;slider.disabled=false;
+ drawTrack(q);showGuess();
+ $('hintBox').hidden=true;$('reveal').hidden=true;$('nextBtn').hidden=true;$('lockBtn').hidden=false;$('hintBtn').hidden=false;$('hintBtn').disabled=false;
+ $('sRound').textContent=(i+1)+'/'+Q.length;
+}
+function lock(){
+ if(locked)return;locked=true;const q=Q[order[i]];const g=+slider.value;
+ const err=Math.abs(g-q.a)/(q.max-q.min);
+ let pts=Math.max(0,Math.round(100*(1-err*4)));if(hintUsed)pts=Math.max(0,pts-10);
+ score+=pts;const close=err<=0.075;streak=close?streak+1:0;best=Math.max(best,streak);
+ slider.disabled=true;
+ const real=document.createElement('div');real.className='marker real';real.style.left=pos(q.min,q)+'%';real.innerHTML='<span class="lbl">Actual '+fmt(q.a,q)+'</span>';
+ $('track').appendChild(real);requestAnimationFrame(()=>requestAnimationFrame(()=>{real.style.left=pos(q.a,q)+'%'}));
+ const pill=$('vPill');pill.className='pill '+(err<=0.075?'good':err<=0.2?'warn':'bad');
+ pill.textContent=err<=0.03?'Bullseye':err<=0.075?'Close':err<=0.2?'In the area':'Way off';
+ $('vPts').textContent='+'+pts+' pts';
+ $('vLine').textContent='You guessed '+fmt(g,q)+(q.unit==='%'?'':q.unit)+'. Actual: '+fmt(q.a,q)+(q.unit==='%'?'':q.unit)+'.';
+ $('vWhy').textContent=q.why;$('vSrc').textContent='Source: '+q.src;
+ $('reveal').hidden=false;$('lockBtn').hidden=true;$('hintBtn').hidden=true;$('nextBtn').hidden=false;$('nextBtn').focus();
+ $('sScore').textContent=score;$('sStreak').textContent=streak;
+ hist.push({q:q.q,g:fmt(g,q),a:fmt(q.a,q),pts});renderHist();
+}
+function renderHist(){$('hCount').textContent=hist.length;$('hList').innerHTML=hist.map(h=>`<div><span>${h.q}</span><span class="m">${h.g} → ${h.a}</span><span class="m">+${h.pts}</span></div>`).join('')}
+function next(){
+ if(!locked)return;
+ if(i<Q.length-1){i++;load();slider.focus();return}
+ $('final').hidden=false;$('reveal').hidden=true;$('nextBtn').hidden=true;
+ document.querySelector('.field').hidden=true;$('qText').textContent='';$('guessVal').textContent='';$('qTag').textContent='Done';
+ const max=Q.length*100;$('fScore').textContent=score+' / '+max;
+ $('fLine').textContent='Best streak: '+best+'. Most people guess too high for owners and head coaches and too low for players. The gap between the two is the point of the quiz.';
+}
+function start(){order=shuffle(Q.map((_,k)=>k));order.sort((a,b)=>a===0?-1:b===0?1:0);i=0;score=0;streak=0;best=0;hist=[];renderHist();
+ $('sScore').textContent=0;$('sStreak').textContent=0;$('final').hidden=true;document.querySelector('.field').hidden=false;load()}
+slider.addEventListener('input',showGuess);
+$('lockBtn').addEventListener('click',lock);
+$('nextBtn').addEventListener('click',next);
+$('againBtn').addEventListener('click',()=>{start();slider.focus()});
+$('hintBtn').addEventListener('click',()=>{hintUsed=true;$('hintBox').textContent='Hint: '+Q[order[i]].hint;$('hintBox').hidden=false;$('hintBtn').disabled=true});
+document.addEventListener('keydown',e=>{
+ if(e.target.tagName==='BUTTON'&&(e.key==='Enter'||e.key===' '))return;
+ if(e.key==='Enter'){e.preventDefault();locked?next():lock()}
+ else if((e.key==='n'||e.key==='N')&&locked){next()}
+});
+start();
+})();
+</script>
+</body>
+</html>
